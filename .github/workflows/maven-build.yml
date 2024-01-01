@@ -1,0 +1,29 @@
+name: Maven build
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 11
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-v11-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-v11
+
+      - name: Build
+        run: mvn --batch-mode compile
+
+      - name: Test and package
+        run: mvn --batch-mode package
+
