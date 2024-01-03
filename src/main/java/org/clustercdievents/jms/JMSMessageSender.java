@@ -12,7 +12,11 @@ import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
+import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.jms.Topic;
+
+import static java.util.UUID.randomUUID;
 
 @Stateless
 public class JMSMessageSender {
@@ -29,8 +33,17 @@ public class JMSMessageSender {
     private Topic topic;
 
     public void send(String message) {
-        log.debug("Sending message '{}' to topic {}", message, topic);
-        jmsContext.createProducer().send(topic, message);
+        final Message jmsMessage = jmsContext.createTextMessage(message);
+        try {
+            // The _AMQ_DUPL_ID property is used by ActiveMQ Artemis for duplicate detection.
+            // Messages with the same _AMQ_DUPL_ID value are considered duplicates and only one of them is processed.
+            // This is needed in case a two-way JMS bridge is in use like in test-jakartaee-clustered-cdi-events.
+            jmsMessage.setStringProperty("_AMQ_DUPL_ID", randomUUID().toString());
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
+        }
+        log.debug("Sending message '{}' to topic {}", jmsMessage, topic);
+        jmsContext.createProducer().send(topic, jmsMessage);
     }
 
 }
