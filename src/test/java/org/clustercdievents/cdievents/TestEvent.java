@@ -1,3 +1,8 @@
+/*
+ * Copyright 2024 Mart Somermaa
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.clustercdievents.cdievents;
 
 import java.util.Objects;

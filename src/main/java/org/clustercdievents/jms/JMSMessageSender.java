@@ -1,3 +1,8 @@
+/*
+ * Copyright 2024 Mart Somermaa
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.clustercdievents.jms;
 
 import org.slf4j.Logger;

@@ -133,7 +133,7 @@ provider ensures the delivery of this message to other nodes in the cluster.
 4. **`JMSMessageReceiver.onMessage()`**: On each node in the cluster,
    `JMSMessageReceiver` listens for messages on the JMS topic. When it receives
 a message, the `onMessage()` method is invoked.
-5. **`CDIEventEmitter.fireLocalCDIEventFromJMSMessage()`**: Inside the
+5. **`CDIEventEmitter.fireLocalAsyncCDIEventFromJMSMessage()`**: Inside the
    `onMessage()` method, the `JMSMessageReceiver` passes the received message
 to `CDIEventEmitter`, which then deserializes the message back into a CDI event
 and fires it locally on the node. This allows CDI components on this node to
@@ -153,7 +153,3 @@ as described in [his blog post](https://ederign.me/2018/09/07/transparent-cdi-ev
 ## License
 
 This project is licensed under the Apache License - see the [LICENSE](LICENSE) file for details.
-
-- Copyright 2018 Red Hat, Inc. and/or its affiliates.
-- Copyright 2024 Mart Sõmermaa.
-
