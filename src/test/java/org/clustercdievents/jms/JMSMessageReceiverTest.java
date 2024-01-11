@@ -37,7 +37,7 @@ class JMSMessageReceiverTest {
 
         jmsMessageReceiver.onMessage(textMessage);
 
-        verify(cdiEventEmitter, times(1)).fireLocalCDIEventFromJMSMessage(TEST_JSON);
+        verify(cdiEventEmitter, times(1)).fireLocalAsyncCDIEventFromJMSMessage(TEST_JSON);
     }
 
 }

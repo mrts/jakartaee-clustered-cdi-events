@@ -31,9 +31,9 @@ public class CDIEventEmitterTest {
 
     @Test
     void testfireLocalCDIEventFromJMSMessage() {
-        cdiEventEmitter.fireLocalCDIEventFromJMSMessage(TEST_JSON);
+        cdiEventEmitter.fireLocalAsyncCDIEventFromJMSMessage(TEST_JSON);
 
-        verify(eventBus, times(1)).fire(new TestEvent("test"));
+        verify(eventBus, times(1)).fireAsync(new TestEvent("test"));
     }
 
 }

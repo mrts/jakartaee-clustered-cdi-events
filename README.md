@@ -11,9 +11,11 @@ in the Drools and jBPM web framework
 - Relies on the strengths and simplicity of the Jakarta EE CDI event mechanism
   that was originally intended only for single-instance use.
 - Transparently adapts the CDI event mechanism for clustered environments.
-  Events are automatically serialized and sent across cluster nodes, then
-deserialized and fired as regular CDI events on each node, ensuring uniform
-event distribution across the cluster.
+  Events are automatically serialized and sent across cluster nodes over JMS,
+then deserialized and fired as regular CDI events on each node, ensuring
+uniform event distribution across the cluster.
+- Uses asynchronous CDI Events, `@ObservesAsync` and `fireAsync()` to match the
+  inherent asynchronicity of JMS-based distribution.
 - Utilizes a custom `@Clustered` annotation to mark events for propagation
   across the cluster.
 - A single JMS topic `CLUSTER_CDI_EVENTS` is used for all events. This
@@ -98,9 +100,10 @@ To use this module in your Jakarta EE application:
 JSON using Yasson (it must be public, have getters, setters and a no-args
 constructor).
 - Fire the clustered events from your application code using the ordinary CDI
-  events mechanism: `Event<T>.fire(T event)`.
+  asynchronous events mechanism: `Event<T>.fireAsync(T event)`.
 - Events are automatically serialized and distributed to other nodes in the
-  cluster, then deserialized and fired as local CDI events.
+  cluster, then deserialized and fired as local asynchronous CDI events.
+- Use a method annotated with `@ObservesAsync` to catch and process the events.
 
 ## Testing
 
@@ -119,13 +122,14 @@ jboss-cli.sh --connect --commands="/subsystem=logging/root-logger=ROOT:write-att
 
 The implementation is relatively straightforward:
 
-1. **`Event<T>.fire(T event)`**: An application component fires a CDI event.
-   This is a regular CDI event firing that occurs within the application code.
+1. **`Event<T>.fireAsync(T event)`**: An application component fires an
+   asynchronous CDI event. This is a regular CDI event firing that occurs
+within the application code.
 2. **`CDIEventObserver.observeAllEvents()`**: The `CDIEventObserver` class
-   method `observeAllEvents()` uses the `@Observes Object event` annotated
-parameter to observe all events. This method is invoked by the Jakarta EE
-container whenever a CDI event is fired. The method checks if the event is
-marked with the `@Clustered` annotation for cluster-wide distribution.
+   method `observeAllEvents()` uses the `@ObservesAsync Object event` annotated
+parameter to observe all asynchronous events. This method is invoked by the
+Jakarta EE container whenever a CDI event is fired. The method checks if the
+event is marked with the `@Clustered` annotation for cluster-wide distribution.
 3. **`JMSMessageSender.send()`**: If the event is marked for cluster
    distribution, `CDIEventObserver` serializes the event data and uses
 `JMSMessageSender` to send this data over a JMS topic. The Jakarta EE JMS

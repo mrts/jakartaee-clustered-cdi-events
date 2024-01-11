@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.event.ObservesAsync;
 import javax.enterprise.inject.spi.EventMetadata;
 import javax.inject.Inject;
 import javax.json.bind.Jsonb;
@@ -27,7 +28,7 @@ public class CDIEventObserver {
     @Inject
     private CDIEventEmitter cdiEventEmitter;
 
-    public void observeAllEvents(@Observes Object event, EventMetadata metaData) {
+    public void observeAllEvents(@ObservesAsync Object event, EventMetadata metaData) {
         log.debug("Observing CDI event: {}", event.getClass().getName());
         if (shouldObserveThisEvent(event, metaData)) {
             log.debug("Sending observed CDI event to JMS: {}", event.getClass().getName());
