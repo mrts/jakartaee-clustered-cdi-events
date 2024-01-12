@@ -32,7 +32,7 @@ public class JMSMessageReceiver implements MessageListener {
         try {
             final String json = ((TextMessage) receivedMessage).getText();
             log.debug("Received message '{}' from JMS destination {}", json, receivedMessage.getJMSDestination());
-            cdiEventEmitter.fireLocalAsyncCDIEventFromJMSMessage(json);
+            cdiEventEmitter.fireLocalCDIEventFromJMSMessage(json);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -6,6 +6,7 @@
 package org.clustercdievents.cdievents;
 
 import org.clustercdievents.jms.JMSMessageSender;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,21 +28,28 @@ class CDIEventObserverTest {
 
     @Mock
     private JMSMessageSender jmsMessageSender;
-
     @Mock
     private CDIEventEmitter cdiEventEmitter;
-
     @Mock
     private EventMetadata metaData;
 
-    @Test
-    void testObserveAllEvents() {
-        final TestEvent testEvent = new TestEvent();
+    private final TestEvent testEvent = new TestEvent();
+
+    @BeforeEach
+    void setUp() {
         when(metaData.getInjectionPoint()).thenReturn(null);
         when(cdiEventEmitter.getNodeId()).thenReturn("1234");
+    }
 
+    @Test
+    void testObserveAllEvents() {
         cdiEventObserver.observeAllEvents(testEvent, metaData);
+        verify(jmsMessageSender, times(1)).send(anyString());
+    }
 
+    @Test
+    void testObserveAllEventsAsync() {
+        cdiEventObserver.observeAllEventsAsync(testEvent, metaData);
         verify(jmsMessageSender, times(1)).send(anyString());
     }
 

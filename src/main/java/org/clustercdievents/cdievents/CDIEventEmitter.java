@@ -26,7 +26,7 @@ public class CDIEventEmitter {
 
     private final String nodeId = UUID.randomUUID().toString();
 
-    public void fireLocalAsyncCDIEventFromJMSMessage(String jsonFromJMSMessage) {
+    public void fireLocalCDIEventFromJMSMessage(String jsonFromJMSMessage) {
         log.debug("Processing JMS message for emitting local CDI event: {}", jsonFromJMSMessage);
         try (Jsonb jsonb = JsonbBuilder.create()) {
             final CDIEventJmsMessageEnvelope envelope = jsonb.fromJson(jsonFromJMSMessage, CDIEventJmsMessageEnvelope.class);
@@ -35,8 +35,13 @@ public class CDIEventEmitter {
                 Objects.requireNonNull(envelope.getObjectType(), "objectType must not be null");
                 final Class<?> objectClass = Class.forName(envelope.getObjectType());
                 final Object event = jsonb.fromJson(envelope.getJson(), objectClass);
-                eventBus.fireAsync(event);
-                log.debug("Local CDI event fired from JMS message for class {}", objectClass.getName());
+                if (envelope.isAsync()) {
+                    eventBus.fireAsync(event);
+                    log.debug("Local async CDI event fired from JMS message for class {}", objectClass.getName());
+                } else {
+                    eventBus.fire(event);
+                    log.debug("Local CDI event fired from JMS message for class {}", objectClass.getName());
+                }
             } else {
                 log.debug("JMS message node ID matches own node ID, ignoring message to self");
             }

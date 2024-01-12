@@ -30,9 +30,14 @@ public class CDIEventEmitterTest {
     private Event<Object> eventBus;
 
     @Test
-    void testfireLocalCDIEventFromJMSMessage() {
-        cdiEventEmitter.fireLocalAsyncCDIEventFromJMSMessage(TEST_JSON);
+    void testFireLocalCDIEventFromJMSMessage() {
+        cdiEventEmitter.fireLocalCDIEventFromJMSMessage(TEST_JSON);
+        verify(eventBus, times(1)).fire(new TestEvent("test"));
+    }
 
+    @Test
+    void testFireLocalCDIEventFromJMSMessageAsync() {
+        cdiEventEmitter.fireLocalCDIEventFromJMSMessage(TEST_JSON.replace("cdievents.TestEvent\",", "cdievents.TestEvent\", \"async\": true,"));
         verify(eventBus, times(1)).fireAsync(new TestEvent("test"));
     }
 

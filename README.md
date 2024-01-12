@@ -14,8 +14,11 @@ in the Drools and jBPM web framework
   Events are automatically serialized and sent across cluster nodes over JMS,
 then deserialized and fired as regular CDI events on each node, ensuring
 uniform event distribution across the cluster.
-- Uses asynchronous CDI Events, `@ObservesAsync` and `fireAsync()` to match the
-  inherent asynchronicity of JMS-based distribution.
+- Supports both asynchronous and synchronous CDI events. Asynchronous events
+  match the inherent asynchronicity of JMS-based distribution, but synchronous
+events support post-transaction completion.
+- Synchronous observer uses `TransactionPhase.AFTER_SUCCESS` to only handle
+  events after transaction completes successfully.
 - Utilizes a custom `@Clustered` annotation to mark events for propagation
   across the cluster.
 - A single JMS topic `CLUSTER_CDI_EVENTS` is used for all events. This
@@ -99,11 +102,19 @@ To use this module in your Jakarta EE application:
   across the cluster. Make sure that the event class is serializable to/from
 JSON using Yasson (it must be public, have getters, setters and a no-args
 constructor).
-- Fire the clustered events from your application code using the ordinary CDI
-  asynchronous events mechanism: `Event<T>.fireAsync(T event)`.
+- Fire clustered events from your application code using either the
+  asynchronous or synchronous CDI events mechanism:
+  - for asynchronous event propagation, use `Event<T>.fireAsync(T event)`,
+  - for synchronous event propagation, use `Event<T>.fire(T event)`.
 - Events are automatically serialized and distributed to other nodes in the
-  cluster, then deserialized and fired as local asynchronous CDI events.
-- Use a method annotated with `@ObservesAsync` to catch and process the events.
+  cluster, then deserialized and fired as local CDI events. The method of
+firing asynchronously or synchronously on the originating node will be mirrored
+on the receiving nodes.
+- Use observer methods annotated with `@ObservesAsync` for handling
+  asynchronous events. For synchronous events, use `@Observes(during =
+TransactionPhase.AFTER_SUCCESS)` to align with the transaction phase used in
+the module, ensuring that synchronous events are handled only after the
+successful completion of transactions. 
 
 ## Testing
 
@@ -112,7 +123,8 @@ A simple application for testing this module is available
 
 ## Debugging
 
-In case you are using WildFly, enable debug logs for the `org.clustercdievents` module in WildFly using `jboss-cli` as follows:
+In case you are using WildFly, enable debug logs for the `org.clustercdievents`
+module in WildFly using `jboss-cli` as follows:
 
 ```sh
 jboss-cli.sh --connect --commands="/subsystem=logging/root-logger=ROOT:write-attribute(name=level, value=DEBUG),/subsystem=logging/logger=org.clustercdievents:add(level=DEBUG)"
@@ -122,25 +134,32 @@ jboss-cli.sh --connect --commands="/subsystem=logging/root-logger=ROOT:write-att
 
 The implementation is relatively straightforward:
 
-1. **`Event<T>.fireAsync(T event)`**: An application component fires an
-   asynchronous CDI event. This is a regular CDI event firing that occurs
-within the application code.
-2. **`CDIEventObserver.observeAllEvents()`**: The `CDIEventObserver` class
-   method `observeAllEvents()` uses the `@ObservesAsync Object event` annotated
-parameter to observe all asynchronous events. This method is invoked by the
-Jakarta EE container whenever a CDI event is fired. The method checks if the
-event is marked with the `@Clustered` annotation for cluster-wide distribution.
+1. **`Event<T>.fire(T event)`** or `Event<T>.fireAsync(T event)`: An
+   application component fires a CDI event either synchronously or
+asynchronously. This is a regular CDI event firing that occurs within the
+application code.
+2. **`CDIEventObserver.observeAllEvents()`** and
+   `CDIEventObserver.observeAllEventsAsync()`: The `CDIEventObserver` class
+method `observeAllEvents()` uses the `@Observes(during =
+TransactionPhase.AFTER_SUCCESS) Object event` annotated parameter to observe
+all events emitted after the successful completion of transactions.
+`observeAllEventsAsync()` uses `@ObservesAsync` for observing all asynchronous
+events. These methods are invoked by the Jakarta EE container internally. The
+methods check if the event is marked with the `@Clustered` annotation for
+cluster-wide distribution.
 3. **`JMSMessageSender.send()`**: If the event is marked for cluster
-   distribution, `CDIEventObserver` serializes the event data and uses
-`JMSMessageSender` to send this data over a JMS topic. The Jakarta EE JMS
-provider ensures the delivery of this message to other nodes in the cluster.
+   distribution, `CDIEventObserver` serializes the event data and whether it is
+synchronous or asynchronous, and uses `JMSMessageSender` to send this data over
+a JMS topic. The Jakarta EE JMS provider ensures the delivery of this message
+to other nodes in the cluster.
 4. **`JMSMessageReceiver.onMessage()`**: On each node in the cluster,
    `JMSMessageReceiver` listens for messages on the JMS topic. When it receives
 a message, the `onMessage()` method is invoked.
 5. **`CDIEventEmitter.fireLocalAsyncCDIEventFromJMSMessage()`**: Inside the
    `onMessage()` method, the `JMSMessageReceiver` passes the received message
 to `CDIEventEmitter`, which then deserializes the message back into a CDI event
-and fires it locally on the node. This allows CDI components on this node to
+and fires it locally on the node either synchronously or asynchronously,
+mirroring the method used on the originating node. CDI components on this node
 observe and react to the event as if it were fired locally.
 
 Eder Ignatowicz's original diagram, shown below, illustrates the system design.

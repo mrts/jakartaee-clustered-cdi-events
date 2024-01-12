@@ -10,16 +10,16 @@ public class CDIEventJmsMessageEnvelope {
     private String json;
     private String nodeId;
     private String objectType;
+    private boolean isAsync;
 
     public CDIEventJmsMessageEnvelope() {
     }
 
-    public CDIEventJmsMessageEnvelope(String nodeId,
-                                      String json,
-                                      String objectType) {
+    public CDIEventJmsMessageEnvelope(String nodeId, String json, String objectType, boolean isAsync) {
         this.nodeId = nodeId;
         this.json = json;
         this.objectType = objectType;
+        this.isAsync = isAsync;
     }
 
     public String getNodeId() {
@@ -44,5 +44,13 @@ public class CDIEventJmsMessageEnvelope {
 
     public void setObjectType(String objectType) {
         this.objectType = objectType;
+    }
+
+    public boolean isAsync() {
+        return isAsync;
+    }
+
+    public void setAsync(boolean async) {
+        isAsync = async;
     }
 }

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.event.ObservesAsync;
+import javax.enterprise.event.TransactionPhase;
 import javax.enterprise.inject.spi.EventMetadata;
 import javax.inject.Inject;
 import javax.json.bind.Jsonb;
@@ -28,21 +29,29 @@ public class CDIEventObserver {
     @Inject
     private CDIEventEmitter cdiEventEmitter;
 
-    public void observeAllEvents(@ObservesAsync Object event, EventMetadata metaData) {
-        log.debug("Observing CDI event: {}", event.getClass().getName());
+    void observeAllEventsAsync(@ObservesAsync Object event, EventMetadata metaData) {
+        observeAllEventsImpl(event, metaData, true);
+    }
+
+    void observeAllEvents(@Observes(during = TransactionPhase.AFTER_SUCCESS) Object event, EventMetadata metaData) {
+        observeAllEventsImpl(event, metaData, false);
+    }
+
+    private void observeAllEventsImpl(Object event, EventMetadata metaData, boolean isAsync) {
+        log.debug("Observing CDI event: {}, async: {}", event.getClass().getName(), isAsync);
         if (shouldObserveThisEvent(event, metaData)) {
-            log.debug("Sending observed CDI event to JMS: {}", event.getClass().getName());
-            jmsMessageSender.send(toJSON(event));
+            log.debug("Sending observed CDI event to JMS: {}, async: {}", event.getClass().getName(), isAsync);
+            jmsMessageSender.send(toJSON(event, isAsync));
         } else {
-            log.debug("CDI event not applicable for forwarding to JMS: {}", event.getClass().getName());
+            log.debug("CDI event not applicable for forwarding to JMS: {}, async: {}", event.getClass().getName(), isAsync);
         }
     }
 
-    private String toJSON(Object event) {
+    private String toJSON(Object event, boolean isAsync) {
         try (Jsonb jsonb = JsonbBuilder.create()) {
             final String eventJson = jsonb.toJson(event);
             final String objectType = event.getClass().getName();
-            final CDIEventJmsMessageEnvelope messageEnvelope = new CDIEventJmsMessageEnvelope(cdiEventEmitter.getNodeId(), eventJson, objectType);
+            final CDIEventJmsMessageEnvelope messageEnvelope = new CDIEventJmsMessageEnvelope(cdiEventEmitter.getNodeId(), eventJson, objectType, isAsync);
             return jsonb.toJson(messageEnvelope);
         } catch (Exception e) {
             throw new RuntimeException(e);
