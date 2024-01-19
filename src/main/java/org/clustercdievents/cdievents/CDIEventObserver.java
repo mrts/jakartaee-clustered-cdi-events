@@ -18,6 +18,8 @@ import javax.inject.Inject;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
+import static org.clustercdievents.cdievents.ClusteredEventChecker.isClustered;
+
 @ApplicationScoped
 public class CDIEventObserver {
 
@@ -59,7 +61,7 @@ public class CDIEventObserver {
     }
 
     private boolean shouldObserveThisEvent(Object event, EventMetadata metaData) {
-        return event.getClass().isAnnotationPresent(Clustered.class) && !createdByCdiEventEmitter(metaData);
+        return isClustered(event) && !createdByCdiEventEmitter(metaData);
     }
 
     private boolean createdByCdiEventEmitter(EventMetadata metaData) {
