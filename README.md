@@ -166,12 +166,12 @@ Eder Ignatowicz's original diagram, shown below, illustrates the system design.
 However, his implementation differs, he is using a single class
 `ClusterEventObserver` instead of all the components mentioned above.
 
-![Architecture diagram](https://ederign.me/assets/2018/cdievent.png)
+![Architecture diagram](https://ederign.me/static/images/2018/cdievent.png)
 
 ## Acknowledgments
 
 Special thanks to Eder Ignatowicz for the original concept and implementation
-as described in [his blog post](https://ederign.me/2018/09/07/transparent-cdi-events.html).
+as described in [his blog post](https://ederign.me/blog/2018-09-07-transparent-cdi-events).
 
 ## License
 
