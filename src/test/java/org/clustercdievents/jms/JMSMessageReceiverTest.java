@@ -12,7 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.jms.TextMessage;
+import jakarta.jms.TextMessage;
 
 import static org.clustercdievents.cdievents.CDIEventEmitterTest.TEST_JSON;
 import static org.mockito.Mockito.times;

@@ -6,34 +6,38 @@ Jakarta EE cluster. Eder Ignatowicz's somewhat different implementation is used
 in the Drools and jBPM web framework
 [Uberfire](https://github.com/kiegroup/appformer/commit/875f0efd9ea80ef9ad5fb104bb05ca81dcdf661e).
 
-## Key concepts
+## Overview
 
-- Relies on the strengths and simplicity of the Jakarta EE CDI event mechanism
-  that was originally intended only for single-instance use.
-- Transparently adapts the CDI event mechanism for clustered environments.
-  Events are automatically serialized and sent across cluster nodes over JMS,
-then deserialized and fired as regular CDI events on each node, ensuring
-uniform event distribution across the cluster.
-- Supports both asynchronous and synchronous CDI events. Asynchronous events
-  match the inherent asynchronicity of JMS-based distribution, but synchronous
-events support post-transaction completion.
-- Synchronous observer uses `TransactionPhase.AFTER_SUCCESS` to only handle
-  events after transaction completes successfully.
-- Utilizes a custom `@Clustered` annotation to mark events for propagation
-  across the cluster.
-- A single JMS topic `CLUSTER_CDI_EVENTS` is used for all events. This
-  simplifies configuration and monitoring, reduces resource usage and ensures
-consistent event processing.
-- Plug and play, integration is easy. Include the module as a dependency in
-  your Jakarta EE WAR or EAR, configure the JMS topic and cross-cluster CDI
-event distribution starts to work.
+The library builds upon the familiar Jakarta EE CDI event mechanism that works
+within single application instances and extends it to work across clustered
+environments without changing how you use CDI events.
+
+When you fire an event, the system automatically serializes it and sends it
+over JMS to all cluster nodes. Each node then deserializes and fires it as a
+regular CDI event. From your perspective, it's just normal CDI events that now
+work cluster-wide transparently.
+
+Both asynchronous and synchronous CDI events are supported. Async events work
+naturally with JMS distribution. Synchronous events use
+`TransactionPhase.AFTER_SUCCESS` to ensure they only fire after successful
+transaction completion.
+
+Events marked with the `@Clustered` annotation are distributed across the
+cluster, unannotated events remain local.
+
+All events use a single JMS topic called `CLUSTER_CDI_EVENTS`. This simplifies
+configuration, reduces resource usage and ensures consistent event processing
+across nodes.
+
+Integration is straightforward. Add the module as a dependency to your WAR or
+EAR, configure the JMS topic and cluster-wide CDI events work automatically.
 
 ## Prerequisites
 
 To use this project, you need:
 
-- Java 11 or higher.
-- A Jakarta EE 8 compatible application server (e.g., WildFly, Payara, Open Liberty).
+- Java 17 or higher.
+- A Jakarta EE 10 compatible application server (e.g., WildFly, Payara, Open Liberty).
 - A JMS provider configured in your Jakarta EE environment.
 
 ## Installation
