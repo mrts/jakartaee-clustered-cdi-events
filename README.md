@@ -98,6 +98,27 @@ In case you are using WildFly, note that you need to run it with full profile to
 standalone.sh -c standalone-full.xml
 ```
 
+### Cross-bridging JMS on two WildFly servers
+
+A JMS cross-bridge can be used for JMS clustering between two WildFly server
+instances. By cross-bridging the messages are replicated from a topic on one
+server to the same topic on the other.
+
+The process involves:
+
+1. Setting up a user on both server instances that the JMS connection will use.
+2. Configuring a JMS bridge in instance A with the bridge’s source destination
+   connecting to instance B.
+3. Similarly, configuring the bridge in instance B with the bridge’s source
+   destination connecting to instance A.
+
+The source and target destination of the bridge is the `CLUSTER_CDI_EVENTS`
+topic used in `jakartaee-clustered-cdi-events`.
+
+The example `jboss-cli` commands for adding the topic, bridge and other
+required configuration are available in the test project in
+[`config/wildfly-configuration-commands.cli`](https://github.com/mrts/test-jakartaee-clustered-cdi-events/blob/main/config/wildfly-configuration-commands.cli).
+
 ## Usage
 
 To use this module in your Jakarta EE application:
